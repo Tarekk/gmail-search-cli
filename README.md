@@ -54,7 +54,7 @@ No email bodies or attachments are stored - just the metadata needed for searchi
 3. Copy the environment file:
 
    ```bash
-   cp env.example .env
+   cp .env.example .env
    ```
 
 4. Set up your credentials:
