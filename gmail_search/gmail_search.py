@@ -599,32 +599,65 @@ def get_search_parameters() -> Tuple[str | None, Optional[int]]:
 
 
 def display_search_results(results: List[EmailMetadata], pattern: str):
-    """Display search results in a formatted table."""
+    """Display search results in a formatted table with pagination."""
     if not results:
         console.print("\n[yellow]No matching emails found.[/yellow]")
         return False
 
-    # Create a table for better display
-    table = Table(
-        show_header=True,
-        header_style="bold magenta",
-        border_style="blue",
-        title=f"Search Results ({pattern})",
-    )
-    table.add_column("Date", style="cyan", width=20)
-    table.add_column("From", style="yellow", width=30)
-    table.add_column("Subject", style="white", width=50)
-    table.add_column("Link", style="blue", width=30)
+    page_size = 20  # Number of results per page
+    total_results = len(results)
+    total_pages = (total_results + page_size - 1) // page_size
+    current_page = 1
 
-    for email in results:
-        table.add_row(
-            email.date.format("YYYY-MM-DD HH:mm"),
-            email.from_address,
-            email.subject,
-            f"[link={email.gmail_link}]🔗 Open in Gmail[/link]",
+    while True:
+        console.clear()
+        start_idx = (current_page - 1) * page_size
+        end_idx = min(start_idx + page_size, total_results)
+        page_results = results[start_idx:end_idx]
+
+        # Create a table for better display
+        table = Table(
+            show_header=True,
+            header_style="bold magenta",
+            border_style="blue",
+            title=f"Search Results ({pattern}) - Page {current_page}/{total_pages}",
+        )
+        table.add_column("Date", style="cyan", width=20)
+        table.add_column("From", style="yellow", width=30)
+        table.add_column("Subject", style="white", width=50)
+        table.add_column("Link", style="blue", width=30)
+
+        for email in page_results:
+            table.add_row(
+                email.date.format("YYYY-MM-DD HH:mm"),
+                email.from_address,
+                email.subject,
+                f"[link={email.gmail_link}]🔗 Open in Gmail[/link]",
+            )
+
+        console.print(table)
+        console.print(
+            f"\n[cyan]Showing results {start_idx + 1}-{end_idx} of {total_results}[/cyan]"
         )
 
-    console.print(table)
+        if total_pages > 1:
+            console.print("\n[bold white]Navigation:[/bold white]")
+            if current_page > 1:
+                console.print("  [blue]p[/blue] - Previous page", end="   ")
+            if current_page < total_pages:
+                console.print("[blue]n[/blue] - Next page", end="   ")
+            console.print("[blue]q[/blue] - Return to search")
+
+            choice = console.input("\nEnter choice: ").lower()
+            if choice == "p" and current_page > 1:
+                current_page -= 1
+            elif choice == "n" and current_page < total_pages:
+                current_page += 1
+            elif choice == "q":
+                break
+        else:
+            break
+
     return True
 
 
