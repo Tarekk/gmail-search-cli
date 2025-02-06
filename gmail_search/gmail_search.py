@@ -535,33 +535,20 @@ def validate_credentials(email: str, password: str) -> bool:
 
 
 def setup_credentials() -> Tuple[str, str]:
-    """Set up Gmail credentials from environment or user input."""
+    """Get Gmail credentials from environment file."""
     load_dotenv()
     email = os.getenv("GMAIL_ADDRESS")
     password = os.getenv("GMAIL_APP_PASSWORD")
 
-    if email and password and validate_credentials(email, password):
-        return email, password
+    if not email or not password:
+        raise ValueError(
+            "Missing credentials in .env file. Please create a .env file with GMAIL_ADDRESS and GMAIL_APP_PASSWORD"
+        )
 
-    console.print("\n[bold]Gmail Account Setup[/bold]")
-    console.print(
-        """
-    1. Enable 2-Step Verification in your Google Account
-    2. Generate an App Password for Gmail
-    """
-    )
+    if not validate_credentials(email, password):
+        raise ValueError("Invalid Gmail credentials in .env file")
 
-    email = input("Enter your Gmail address: ")
-    password = input("Enter your App Password: ")
-
-    if validate_credentials(email, password):
-        # Save credentials
-        with open(".env", "w") as f:
-            f.write(f"GMAIL_ADDRESS={email}\n")
-            f.write(f"GMAIL_APP_PASSWORD={password}\n")
-        return email, password
-
-    raise ValueError("Invalid credentials")
+    return email, password
 
 
 def show_title():
@@ -691,6 +678,9 @@ def main():
 
     except KeyboardInterrupt:
         console.print("\n[yellow]Program interrupted by user[/yellow]")
+    except ValueError:
+        # Don't repeat error messages from initialize_service
+        pass
     except Exception as e:
         console.print(f"[red]Error: {str(e)}[/red]")
     finally:
